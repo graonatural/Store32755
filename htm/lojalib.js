@@ -1,4 +1,5 @@
-// Template Fastcommerce [08/2016]
+// Template Fastcommerce [11/2016]
+'use strict'
 
 var iQtdProds=0;
 var iItensCesta=0;
@@ -24,13 +25,13 @@ var sF$=(function(){
 
   //Função para mostrar valor economizado em produtos em promoção
   function fnShowEconomy(ProdPrice,ProdPriceOri){
-    if(ProdPrice!=ProdPriceOri)document.write("<span class=FCfnShowEconomy>Economize <b>"+FormatPrice(ProdPriceOri-ProdPrice,FC$.Currency)+"</b> ("+fnFormatNumber(((ProdPriceOri-ProdPrice)/ProdPriceOri)*100)+"%)</span>");
+    if(ProdPrice!=ProdPriceOri)document.write("<span class=FCfnShowEconomy>Economize até <b>"+FormatPrice(ProdPriceOri-ProdPrice,FC$.Currency)+"</b> ("+fnFormatNumber(((ProdPriceOri-ProdPrice)/ProdPriceOri)*100)+"%)</span>");
   }
   
   function fnFormatNumber(num){
     num=num.toString().replace(/\$|\,/g,'');
     if(isNaN(num))num="0";
-    sign=(num==(num=Math.abs(num)));
+    var sign=(num==(num=Math.abs(num)));
     num=Math.floor(num*100+0.50000000001);
     num=Math.floor(num/100).toString();
     for(var i=0;i<Math.floor((num.length-(1+i))/3);i++)num=num.substring(0,num.length-(4*i+3))+'.'+num.substring(num.length-(4*i+3));
@@ -41,7 +42,7 @@ var sF$=(function(){
     if(FC$.ClientID!=0){
       var oLinkLogin=fnGetID("idLinkLoginFC");
       if(oLinkLogin){
-        oLinkLogin.innerHTML="Logout";
+        oLinkLogin.innerHTML="&bull; Logout";
         oLinkLogin.href="/cadastro.asp?idloja="+ FC$.IDLoja +"&logoff=true";
       }
     }
@@ -97,7 +98,52 @@ var sF$=(function(){
     if(idPrice)idPrice.innerHTML=sPrice;
 
   }
+  
+  //Novo Preço novopreco
+  function fnShowNewPrice(Price,OriginalPrice,Cod,PrecoVista,iMaxParcels,ProductID){
+    iPL++;
+    //console.log(ProductID+ " iPL="+ iPL +" Price="+Price +" OriginalPrice="+ OriginalPrice +" Cod="+ Cod);
+    var idPrice=fnGetID("idProdPrice"+ProductID);
+    var sPrice="";
+    if(Price==0 && OriginalPrice==0){
+      if(idPrice)idPrice.innerHTML="<div class=\"prices\"><br><div class=price><div class=currency><a href='/faleconosco.asp?idloja="+FC$.IDLoja+"&assunto=Consulta%20sobre%20produto%20(Código%20"+Cod+")' target='_top' >Consulte-nos</a></div></div></div>";
+      return void(0);
+    }
+    var iPrice=PrecoVista.toString().split(".");
+    if(iPrice.length==2){
+      var iPriceInt=iPrice[0];
+      var PriceDecimal=iPrice[1];
+      if(PriceDecimal.length==1)PriceDecimal+="0";
+    }
+    else{
+      var iPriceInt=iPrice;
+      var PriceDecimal="00";
+    }    
 
+    var sInterest;
+
+    if(typeof Juros!="undefined"){
+      if(iMaxParcels==0||iMaxParcels>Juros.length)iMaxParcels=Juros.length;
+      if(Juros[iMaxParcels-1]>0)sInterest=""; else sInterest=" sem juros";
+    }
+    else{
+      iMaxParcels=0;
+    }
+	sPrice+="<div class=\"prices\">";
+    if(Price!=OriginalPrice){
+      sPrice+="  <div class=\"old-price line-through\">De&nbsp; <span>"+FormatPrice(OriginalPrice,FC$.Currency)+"</span><span class=\"por\">&nbsp;Por</span></div>";
+    }
+    else{
+      //sPrice+="  <div class=\"old-price\"><span>&nbsp;</span><div class=\"por\">Por</div></div>";
+      sPrice+="  <div class=\"old-price\"><span></span><span class=\"por\">Por</span></div>";
+    }
+    sPrice+="  <div class=\"price\"><span class=\"currency\"><strong>"+FC$.Currency+" </span><span class=\"int\">"+ fnFormatNumber(iPriceInt) +"</span><span class=\"dec\">,"+ PriceDecimal +"</span></strong></div>";
+    sPrice+="  <div class=\"EstParc\">(no boleto ou depósito bancário)</div>";
+    sPrice+="  <div class=\"old-price\">ou&nbsp; <span>"+FormatPrice(Price,FC$.Currency)+"</span> em até 3x sem juros no cartão de crédito</div>";
+    if(iMaxParcels>1)sPrice+="  <div class=\"installments\"><strong><span class=\"installment-count\">"+ iMaxParcels +"</span>x</strong> de <strong><span class=\"installment-price\">"+FormatPrice(CalculaParcelaJurosCompostos(Price,iMaxParcels),FC$.Currency)+"</span></strong>"+ sInterest +"</div>";
+    sPrice+="</div>";
+    if(idPrice)idPrice.innerHTML=sPrice;
+  }
   function fnShowParcels(Price,iMaxParcels,ProductID){
     var idParcelsProd=fnGetID("idProdParcels"+ProductID);
     var sPrice="";
@@ -165,7 +211,7 @@ var sF$=(function(){
   function fnCustomizeIconsSocialNetworks(isProd){
   //se isProd personaliza ícones do detalhe do produto, caso contrário do rodapé
     if(isProd)var oContentHTML=document.getElementById("idShareProd");
-    else var oContentHTML=document.getElementById("idShareFooter");
+    else var oContentHTML=document.getElementById("idShareHeader");
     if(oContentHTML)var aImgsShare=oContentHTML.getElementsByTagName('img');
     if(aImgsShare)
       for(var i=0;i<aImgsShare.length;i++){
@@ -195,7 +241,7 @@ var sF$=(function(){
         }
     }
   }
- 
+  
   function fnShowCart(bShow,ItensCesta){
    oTabItensCart=document.getElementById('TabItensCart');
    if(bShow){
@@ -216,11 +262,11 @@ var sF$=(function(){
 
   function fnCallbackUpdateCart(oHTTP,IsAdd,IsSpy){
     if(oHTTP.responseXML){
-      oXML=oHTTP.responseXML;
+      var oXML=oHTTP.responseXML;
       var oCarts=oXML.getElementsByTagName("cart");
-      try{currencyProdCart=(oCarts[0].getElementsByTagName("currency")[0].childNodes[0].nodeValue);}catch(e){currencyProdCart=FC$.Currency}
-      try{TotalQtyProdCart=(oCarts[0].getElementsByTagName("TotalQty")[0].childNodes[0].nodeValue);}catch(e){TotalQtyProdCart="0"}
-      try{subtotalProdCart=(oCarts[0].getElementsByTagName("subtotal")[0].childNodes[0].nodeValue);}catch(e){subtotalProdCart="0,00"}
+      try{var currencyProdCart=(oCarts[0].getElementsByTagName("currency")[0].childNodes[0].nodeValue);}catch(e){currencyProdCart=FC$.Currency}
+      try{var TotalQtyProdCart=(oCarts[0].getElementsByTagName("TotalQty")[0].childNodes[0].nodeValue);}catch(e){TotalQtyProdCart="0"}
+      try{var subtotalProdCart=(oCarts[0].getElementsByTagName("subtotal")[0].childNodes[0].nodeValue);}catch(e){subtotalProdCart="0,00"}
       iItensCesta=TotalQtyProdCart;
       if(IsSpy){
         var oReferrer=window.parent;
@@ -236,8 +282,8 @@ var sF$=(function(){
         try{document.getElementById("idCartTotalToolTop").innerHTML=FCLib$.FormatPreco(currencyProdCart +" "+ subtotalProdCart);}catch(e){}
       }
     }
-  }
-
+  }  
+    
   //Histórico de navegação
   function fnLoadXMLPageHistory(){FCLib$.fnAjaxExecFC("/xmlpagehistory.asp","idloja="+FC$.IDLoja,false,fnCallbackLoadXMLPageHistory);}
 
@@ -255,14 +301,14 @@ var sF$=(function(){
       var sPageHistory="";
       try{var sBar=(oHistoryPages[0].getElementsByTagName("title")[0].childNodes[0].nodeValue);}
       catch(e){var sBar="";}
-      if(sBar!=""){sPageHistory+="<div class='FooterSepFC col-xlarge-12'><img src='"+ FC$.PathImg +"footersep.png?cccfc=1'></div><div id='idDivPageHistory'><div id='idPageHistoryFC'><div id='idTitPageHistory'>Páginas Visitadas:</div><ul id='idListPageHistoryFC'>";}  
-      for (i=0;i<oHistoryPages.length;i++){
-        sTitleProd=oHistoryPages[i].getElementsByTagName("title")[0].childNodes[0].nodeValue;
-        sLinkProd=oHistoryPages[i].getElementsByTagName("link")[0].childNodes[0].nodeValue;
-        try{sImageProd=oHistoryPages[i].getElementsByTagName("image")[0].childNodes[0].nodeValue;}
-        catch(e){sImageProd=FC$.PathImg+"nd0.gif";}
-        try{sPriceProd=(oHistoryPages[i].getElementsByTagName("price")[0].childNodes[0].nodeValue);}
-        catch(e){sPriceProd="";}
+      if(sBar!=""){sPageHistory+="<div class='row FullDoubleSpaceFC'></div><div class='FooterSepFC col-xlarge-12'></div><div id='idDivPageHistory'><div id='idPageHistoryFC'><div id='idTitPageHistory'><h2 class='GlobalTitleSepBG GlobalTitleSepDoubleLine'><span class='GlobalTitleSizeSep'>PÁGINAS VISITADAS</span></h2></div><ul id='idListPageHistoryFC'>";} 
+      for (var i=0;i<oHistoryPages.length;i++){
+        var sTitleProd=oHistoryPages[i].getElementsByTagName("title")[0].childNodes[0].nodeValue;
+        var sLinkProd=oHistoryPages[i].getElementsByTagName("link")[0].childNodes[0].nodeValue;
+        try{var sImageProd=oHistoryPages[i].getElementsByTagName("image")[0].childNodes[0].nodeValue;}
+        catch(e){var sImageProd=FC$.PathImg+"nd0.gif";}
+        try{var sPriceProd=(oHistoryPages[i].getElementsByTagName("price")[0].childNodes[0].nodeValue);}
+        catch(e){var sPriceProd="";}
         sTitleProd=sTitleProd.substring(0,20);
         sPageHistory+="<li>";
         sPageHistory+="<div class='EstImagePageHistory'><a href='"+ sLinkProd +"'><img src='"+ sImageProd +"'  title='"+ sTitleProd +"' border=0 class=EstFotoPageHistory onError=MostraImgOnError(this,0)></a></div>";
@@ -306,16 +352,16 @@ var sF$=(function(){
     }
     else{
       NameUser=fnFirstName(NameUser);
-      jQuery('.loginInfo').html("<span class='col-small-12 HeaderSocialLoginUserName'>Olá, <b>"+NameUser+"</b>,</span> <span class='col-small-12 HeaderSocialLoginUserName'><a href='#Logout' onclick=FCLib$.fnClientLogout('',sF$.fnCliLogout)><span class='HeaderSocialLoginLogout'>&nbsp;(sair)</span></a></span>");
+      jQuery('.loginInfo').html("<span class='col-small-12'>Olá, <b>"+NameUser+"</b>,</span> <span class='col-small-12'><a href='#Logout' onclick=FCLib$.fnClientLogout('',sF$.fnCliLogout)><span class='HeaderSocialLoginLogout'>(sair)</span></a></span>");
       if(oImgGlobalSign){oImgGlobalSign.style.display="none";}
     }
     var oFoto=document.getElementById("UserImage");
     if(oFoto){
       if(PicUser==undefined || PicUser==""){oFoto.src=FC$.PathImg+"iconuser.svg";}
-      else{oFoto.src=PicUser;}   
+      else{oFoto.src=PicUser;}
     } 
   }
- 
+
   function fnFirstName(NameUser){
     var iPos=NameUser.search(" ");
     if(iPos>0) return NameUser.charAt(0).toUpperCase() + NameUser.substring(0,iPos).slice(1).toLowerCase();
@@ -348,36 +394,95 @@ var sF$=(function(){
       ga('send','event',sCategory,sAction,sLabel);
     }
   }
+
+  //Mostra estrelas de avaliação do produto
+  function reviewProd(IDProd,ReviewQtd,ReviewMedia){
+    var innerReview = document.querySelector("#RateProd"+IDProd);
+    if(ReviewQtd>0){
+      innerReview.innerHTML = "<table><tr><td>"+ReviewMedia+"</td><td></td></tr></table>";}else{innerReview.innerHTML="<table><tbody><tr><td><table cellspacing='0' cellpadding='0'><tbody><tr><td class='NotaOpiniaoVazio'></td><td class='NotaOpiniaoVazio'></td><td class='NotaOpiniaoVazio'></td><td class='NotaOpiniaoVazio'></td><td class='NotaOpiniaoVazio'></td></tr></tbody></table></td><td></td></tr></tbody></table>";
+    }
+  }
   
-    //Show and Hide Banner Home
+  //Show and Hide Banner Home
   function fnHideShowBannersHome(){
     var FCHideHomeBanners = document.getElementById('FC-HideHomeBanners');
     var FCShowHomeBanners = document.getElementById('FC-ShowHomeBanners');
     FCShowHomeBanners.innerHTML = FCHideHomeBanners.innerHTML;
   }
   
-    //Aviso de disponibilidade
+  //Home Carousel
+  function fnHomeCarousel(){
+    jQuery(document).ready(function($){
+      $('.HomeProd-SlideResponsive').slick({
+        dots: false,
+        infinite: true,
+        speed: 5,
+        slidesToShow: 4,
+        slidesToScroll: 1,
+        variableWidth: true,
+        responsive: [
+        {
+          breakpoint: 1200,
+          settings: {
+            slidesToShow: 4,
+            slidesToScroll: 1,
+          }
+        },
+        {
+          breakpoint: 1000,
+          settings: {
+            slidesToShow: 4,
+            slidesToScroll: 1,
+          }
+        },
+        {
+          breakpoint: 768,
+          settings: {
+            slidesToShow: 3,
+            slidesToScroll: 1,
+          }
+        },
+        {
+          breakpoint: 600,
+          settings: {
+            slidesToShow: 2,
+            slidesToScroll: 1,
+          }
+        },
+        {
+          breakpoint: 320,
+          settings: {
+            slidesToShow: 1,
+            slidesToScroll: 1,
+          }
+        }
+        ]
+      });
+    });
+  }
+  
+  //Aviso de disponibilidade
   function fnLinkDisp(Estoque,IDProduto){
     if(Estoque==0){
       document.write("<a href='javascript:MostraDisp("+ FC$.IDLoja +","+ IDProduto +")' title='Clique aqui para ser avisado quando este produto estiver disponível'>Avise-me quando estiver disponível</a>");
     }
   }
-
+  
   // Video Filter
-  function fnShowVideo(IDProduto,oProdFilters,sImagemProdPri,sNomeProd){
+  function fnShowVideo(IDProduto,oProdFilters,sImagemProdPri,sURLProd,sNomeProd){
     var sVideo="";
     if(oProdFilters.length>0){
       var iFiltroVideo=oProdFilters[0].pFilNames["video"];
       if(iFiltroVideo!=undefined)sVideo=oProdFilters[0].pFil[iFiltroVideo].value;
     }
-    fnVideoImage(IDProduto,sVideo,sImagemProdPri,sNomeProd);
+    fnVideoImage(IDProduto,sVideo,sImagemProdPri,sURLProd,sNomeProd);
   }
   
   // Video and Image Product
-  function fnVideoImage(IDProduto,videoProduct,ImagemProdPri,NomeProd){
-    var replaceNomeProd = NomeProd.replace(/-/g,' ');  
+  function fnVideoImage(IDProduto,videoProduct,ImagemProdPri,sURLProd,NomeProd){
+    var replaceNomeProd = NomeProd.replace(/-/g,' ');
     if (videoProduct==""){
-      document.getElementById("id-video-image"+IDProduto).innerHTML="<div class='ImgCapaListProd DivListproductStyleImagemZoom'><img src="+ ImagemProdPri +" alt=\""+ replaceNomeProd +"\" onerror='MostraImgOnError(this,0)'></div>";
+      document.getElementById("id-video-image"+IDProduto).innerHTML="<div class='ImgCapaListProd DivListproductStyleImagemZoom'><a href='"+ sURLProd +"' class='ImgCapaProd'><img src="+ ImagemProdPri +" alt=\""+ replaceNomeProd +"\" onerror='MostraImgOnError(this,0)'></a></div>";
     }else{
      document.getElementById("id-video-image"+IDProduto).innerHTML="<video id=prodVideo"+ IDProduto +" class='videoProd' preload=auto loop src='https://my.mixtape.moe/"+ videoProduct +".mp4'></video>";
      function execVideoEvents(){
@@ -387,8 +492,8 @@ var sF$=(function(){
      execVideoEvents();
      FCLib$.AddEvent(document,"scroll",execVideoEvents);
     }
-  }
-
+  }  
+  
   return{
     sCurrentPage:sCurrentPage,
     fnGetID:fnGetID,
@@ -396,6 +501,7 @@ var sF$=(function(){
     fnPreloadImages:fnPreloadImages,
     fnShowEconomy:fnShowEconomy,
     fnLogout:fnLogout,
+    fnShowNewPrice:fnShowNewPrice,
     fnShowPrice:fnShowPrice,
     fnShowParcels:fnShowParcels,
     fnShowButtonCart:fnShowButtonCart,
@@ -412,11 +518,13 @@ var sF$=(function(){
     fnAdjustsFilters:fnAdjustsFilters,
     fnLoginUserName:fnLoginUserName,
     fnCliLogout:fnCliLogout,
+    reviewProd:reviewProd,
     fnMostraDescontoHome:fnMostraDescontoHome,
     fnMostraDescontoProdLista:fnMostraDescontoProdLista,
     fnMostraDescontoProdDet:fnMostraDescontoProdDet,
     fnCreateEventGA:fnCreateEventGA,
     fnHideShowBannersHome:fnHideShowBannersHome,
+    fnHomeCarousel:fnHomeCarousel,
     fnLinkDisp:fnLinkDisp,
     fnShowVideo:fnShowVideo
   }
@@ -456,7 +564,7 @@ function ShowCartOnPage(IDLoja,iErr,sMsg,sCartText,sCheckoutText,este){
      if(iErr==0){
        sHTML+="<tr height=45>";
        sHTML+="<td valign=top align=center style=cursor:pointer onclick=top.location.href='/addproduto.asp?idloja="+ IDLoja +"'><a href='/addproduto.asp?idloja="+ IDLoja +"' style='color:#444444;text-decoration:none;font-size:14px;font-weight:bold;'>Ir para o carrinho</a></td>";
-       sHTML+="<td align=left><img src='"+ FC$.PathImg +"iconclose.svg?cccfc=1' width=20 height=20 hspace=5 style='cursor:pointer;margin-top:10px' onclick=oDivShowCartOnPage.style.visibility='hidden'></td>";
+       sHTML+="<td align=left><img src='"+ FC$.PathImg +"IconClose.svg?cccfc=1' width=20 height=20 hspace=5 style='cursor:pointer;margin-top:10px' onclick=oDivShowCartOnPage.style.visibility='hidden'></td>";
        sHTML+="</tr>";
        sF$.fnUpdateCart(true,false);
      }
@@ -473,112 +581,6 @@ function ShowCartOnPage(IDLoja,iErr,sMsg,sCartText,sCheckoutText,este){
   iLastCartOnPage++;
   setTimeout("if(iLastCartOnPage=="+ iLastCartOnPage +")oDivShowCartOnPage.style.visibility='hidden';",4000);
 }
-
-// ZipCode - CEP
-function fnShowCEP(IDProd){
-  if(FC$.TypeFrt==3 || FC$.TypeFrt==4){
-    var sNumCEP=fnGetCookie('CEP'+FC$.IDLoja);
-    if(sNumCEP==null)sNumCEP="";
-    sCEP="<div id='idDivCEPFC'>";
-    sCEP+="  <div id='idDivTitCEP'><img src='"+ FC$.PathImg +"iconziptruck.svg?cccfc=1' width='25' height='25' alt='Zip box' /><span>Simule o valor do frete</span></div>";
-    sCEP+="  <div id='idDivContentCEP'>";
-    sCEP+="    <div id='idDivContentFieldsCEP'>";
-    sCEP+="      <div id='idDivCEPCalc'>";
-    sCEP+="        <div class='FieldCEP FieldCEPQty'><label>Qtd.</label><input type='number' id='idQtdZip"+ IDProd +"' value='1' maxlength='4'></div>";
-    sCEP+="        <div class='FieldCEP FieldCEPNum'><input type='text' placeholder='CEP' id='idZip"+ IDProd +"' value='"+ sNumCEP +"' maxlength='9'></div>";
-    sCEP+="        <img src='"+ FC$.PathImg +"iconnewsletter.svg?cccfc=1' height='29px' id='idCEPButton' class='FieldCEPBtn' onclick='fnGetShippingValuesProd("+ IDProd +")'>";
-    sCEP+="      </div>";
-    sCEP+="    </div>";
-    sCEP+="    <div id='idDivImgLoadingCEPFC'><img src='"+ FC$.PathImg +"loadingcep.gif?cccfc=1' vspace=3 style='display:none;' id=ImgLoadingCEP></div>";
-    sCEP+="    <div id='idShippingValues"+ IDProd +"'></div></div>";
-    sCEP+="  </div>";
-    if(FC$.TypeFrt==4)sCEP+="<div class='FreightTxtOnlyBR'><img src='"+FC$.PathImg+"icexclamation.svg?cccfc=1'>Simulação apenas para o Brasil</div>";
-    sCEP+="</div>";
-    var oShowCEP=document.getElementById("ShowCEP"+IDProd);
-    if(oShowCEP)oShowCEP.innerHTML=sCEP;
-  }
-}
-
-function fnGetShippingValuesProd(IDProd){
-  sCEP=document.getElementById("idZip"+ IDProd).value;
-  fnSetCookie('CEP'+FC$.IDLoja,sCEP);
-  if(sCEP==""){document.getElementById("idShippingValues"+IDProd).innerHTML="<span class='freightResult' style=color:#990000;>Informe o CEP</span>";return;}
-  document.getElementById("idShippingValues"+IDProd).innerHTML="";
-  document.getElementById("ImgLoadingCEP").style.display='';
-  var iQty=document.getElementById("idQtdZip"+IDProd).value;
-  if(IDProd)var sParamProd="&idproduto="+ IDProd;
-  else var sParamProd="";
-  AjaxExecFC("/XMLShippingCEP.asp","IDLoja="+ FC$.IDLoja +"&qty="+ iQty +"&cep="+ sCEP + sParamProd,false,processXMLCEP,IDProd);
-}
-
-function processXMLCEP(obj,IDProd){
-  var sShipping="";
-  var oShippingValues=document.getElementById("idShippingValues"+IDProd);
-  var iErr=ReadXMLNode(obj,"err");if(iErr==null)return;
-  if(iErr!="0"){
-    document.getElementById("ImgLoadingCEP").style.display='none';
-    oShippingValues.innerHTML="<span class='freightResult' style=color:#990000;>"+ ReadXMLNode(obj,"msg") +"</span>";
-    return;
-  }
-  oShippingValues.innerHTML="";
-  var UseCart=ReadXMLNode(obj,"UseCart");
-  if(UseCart=="False"){
-    var ProdName=ReadXMLNode(obj,"ProdName");
-    var ProdRef=ReadXMLNode(obj,"ProdRef");  
-  }
-  sShipping+="<div class='ZipOptions'>";
-  var iOpt=ReadXMLNode(obj,"OptQt");
-  for(var i=1;i<=iOpt;i++){
-    var OptName=ReadXMLNode(obj,"Opt"+ i +"Name");
-    var OptImage=ReadXMLNode(obj,"Opt"+ i +"Image");
-    var OptObs=ReadXMLNode(obj,"Opt"+ i +"Obs");
-    if(OptObs==null)OptObs="";
-    sValorFrete=ReadXMLNode(obj,"Opt"+ i +"Value");
-    if(sValorFrete==FC$.Currency+" 0,00")sValorFrete="FRETE GRÁTIS";
-    sShipping+="<div class='ZipOption'>";
-    sShipping+="  <div class='ZipNameObs'>";
-    sShipping+="    <div class='ZipName'>"+ OptName +"</div>";
-    sShipping+="    <div class='ZipObsVal'>"+ OptObs +"</div>";
-    sShipping+="  </div>";
-    sShipping+="  <div class='ZipValue'>"+ sValorFrete +"</div>";
-    sShipping+="</div>";
-  }
-  oShippingValues.innerHTML=sShipping;
-  oShippingValues.style.display="block"; 
-  sShipping+="</div>";
-  document.getElementById("ImgLoadingCEP").style.display='none';
-}
-
-function fnGetCookie(name){
-  var arg=name+"=";
-  var alen=arg.length;
-  var clen=document.cookie.length;
-  var i=0;
-  while (i<clen){
-    var j=i+alen;
-    if(document.cookie.substring(i,j)==arg)return fnGetCookieVal(j);
-    i=document.cookie.indexOf(" ",i)+1;
-    if(i==0)break;
-  }
-  return null;
-}
-
-function fnGetCookieVal(offset){
-  var endstr=document.cookie.indexOf(";",offset);
-  if (endstr==-1)endstr=document.cookie.length;
-  return unescape(document.cookie.substring(offset,endstr));
-}
-
-function fnSetCookie(name,value){
-  var argv=fnSetCookie.arguments;
-  var argc=fnSetCookie.arguments.length;
-  var expires=(argc>2)?argv[2]:null;
-  var path=(argc>3)?argv[3]:null;
-  var domain=(argc>4)?argv[4]:null;
-  var secure=(argc>5)?argv[5]:false;
-  document.cookie=name+"="+escape(value)+((expires==null)?"":(";expires=" + expires.toGMTString()))+((path==null)?"":(";path="+path))+((domain==null)?"":(";domain="+domain))+((secure==true)?"; secure":"");
-}
-// Frete - CEP - End
 
 //Smart Suggestions
 function fnCallbackSuggestions(aTerms){
@@ -607,22 +609,6 @@ function fnCallbackSuggestions(aTerms){
 // Funções executadas no rodapé
 function fnFooter(){
 
-  //Convert Nav UL > LI to Select
-  jQuery(function () {
-    // Menu Produtos
-    jQuery('#FooterNav1').tinyNav({
-      header: 'Produtos'
-    });
-    // Menu Minha Conta
-    jQuery('#FooterNav2').tinyNav({
-      header: 'Minha Conta'
-    });
-    // Menu Informações
-    jQuery('#FooterNav3').tinyNav({
-      header: 'Informações'
-    });
-  });
-
   FCLib$.onReady(sF$.fnCustomizeIconsSocialNetworks(false));
   if(FC$.query!="")FCLib$.onReady(FCLib$.fnGetSuggestions(decodeURIComponent(FC$.query),true,fnCallbackSuggestions));
 
@@ -636,10 +622,10 @@ function fnFooter(){
       sAddScript.parentNode.insertBefore(oScript,sAddScript);
     }
   }else if(FC$.Page=="Track")FCLib$.onReady(FCLib$.fnOrderTrack());
-
+  
   jQuery(document).ready(function(){
     sF$.fnLoadXMLPageHistory();
-  });
+  });   
   
   sF$.fnLogout();
   fnShowYear();
@@ -647,16 +633,10 @@ function fnFooter(){
   FCLib$.ShowBadgeFC();
   var ListVerify=document.querySelector('.ProductList');
   if (FC$.Page=="Products" && ListVerify){
-    document.querySelector('#idFCContent').setAttribute('class','col-large-9 col-xlarge-10');
+    document.querySelector('#idFCContent').setAttribute('class','col-small-9 col-medium-9 col-large-9 col-mlarge-9 col-xlarge-10');
   };
 
   FCLib$.onReady(FCLib$.execWaveInterchange);
-
-  NProgress.start();
-  window.addEventListener("load",function(event){
-    NProgress.done();
-  });
-
 
 }
 
@@ -734,12 +714,12 @@ function NoCascate(sURL){
 // Grade
 /*Função para mostrar parcelamento*/
 function fnMaxInstallmentsGrid(PrecoProd,MaxParcelas){
-  var ComSem;
+  var ComSem;  
   if(typeof Juros!="undefined"){
     if(PrecoProd==0||MaxParcelas==1||Juros.length==0)return "";
     if(MaxParcelas==0||MaxParcelas>Juros.length)MaxParcelas=Juros.length;
     if(Juros[MaxParcelas-1]>0)ComSem=""; else ComSem="<font color=#990000> sem juros</font>";
-    return "<span class=EstParc> ou <b>"+MaxParcelas+"x</b>"+ComSem+" de <b>"+FormatPrice(CalculaParcelaJurosCompostos(PrecoProd,MaxParcelas),FC$.Currency)+"</b></span>";
+    return "<br><span class=EstParc> ou <b>"+MaxParcelas+"x</b>"+ComSem+" de <b class=EstParcPrice>"+FormatPrice(CalculaParcelaJurosCompostos(PrecoProd,MaxParcelas),FC$.Currency)+"</b></span>";
   }else{
     return "";
   }
@@ -757,7 +737,7 @@ function FormatNumber(num){
 /*Função para mostrar valor economizado em produtos em promoção*/
 function fnShowEconomyGrid(ProdPrice,ProdPriceOri){
   if(ProdPrice!=ProdPriceOri && typeof FormatNumber == 'function' && typeof FormatPrice == 'function' ){
-    return "<font style='font-size:16px;display:block;margin:10px 0;' color=#6f9e45>Economize <b>"+ FormatPrice(ProdPriceOri-ProdPrice,FC$.Currency) +"</b> ("+ FormatNumber(((ProdPriceOri-ProdPrice)/ProdPriceOri)*100)+"%)</font>";
+    return "<div class='GlobalSavePrice'>Economize <b>"+ FormatPrice(ProdPriceOri-ProdPrice,FC$.Currency) +"</b> ("+ FormatNumber(((ProdPriceOri-ProdPrice)/ProdPriceOri)*100)+"%)</div>";
   }else{return "";}
 }
 
@@ -766,13 +746,13 @@ function fnShowCEPGrid(IDProd){
   if(FC$.TypeFrt==3){
     var sNumCEP=fnGetCookie('CEP'+FC$.IDLoja);
     if(sNumCEP==null)sNumCEP="";
-    sCEP="<div id='idDivCEPFC'>";
+    var sCEP="<div id='idDivCEPFC'>";
     sCEP+="  <div id='idDivTitCEP'><img src='"+ FC$.PathImg +"iconziptruck.svg?cccfc=1' width='25' height='25' alt='Zip box' /><span>Simule o valor do frete</span></div>";
     sCEP+="  <div id='idDivContentCEP'>";
     sCEP+="    <div id='idDivContentFieldsCEP'>";
     sCEP+="      <div id='idDivCEPCalc'>";
     sCEP+="        <div class='FieldCEP FieldCEPQty'><label>Qtd.</label><input type='number' id='idQtdZip"+ IDProd +"' value='1' maxlength='4'></div>";
-    sCEP+="        <div class='FieldCEP FieldCEPNum'><input type='text' placeholder='CEP' id='idZip"+ IDProd +"' value='"+ sNumCEP +"' maxlength='9'></div>";
+    sCEP+="        <div class='FieldCEP FieldCEPNum'><input type='text' placeholder='CEP' id='idZip"+ IDProd +"' value='"+ sNumCEP +"' maxlength='8' onkeyup='this.value=this.value.replace(/[^\\d]+/g,\"\");if(this.value.length >= 8)document.getElementById(\"idCEPButton\").click()'></div>";
     sCEP+="        <img src='"+ FC$.PathImg +"iconnewsletter.svg?cccfc=1' height='29px' id='idCEPButton' class='FieldCEPBtn' onclick='fnGetShippingValuesProdGrid("+ IDProd +")'>";
     sCEP+="      </div>";
     sCEP+="    </div>";
@@ -786,7 +766,7 @@ function fnShowCEPGrid(IDProd){
 }
 
 function fnGetShippingValuesProdGrid(IDProd){
-  sCEP=document.getElementById("idZip"+ IDProd).value;
+  var sCEP=document.getElementById("idZip"+ IDProd).value;
   fnSetCookie('CEP'+FC$.IDLoja,sCEP);
   if(sCEP==""){document.getElementById("idShippingValues"+IDProd).innerHTML="<span class='freightResult' style=color:#990000;>Informe o CEP</span>";return;}
   document.getElementById("idShippingValues"+IDProd).innerHTML="";
@@ -820,7 +800,7 @@ function processXMLCEPGrid(obj,IDProd){
     var OptImage=ReadXMLNode(obj,"Opt"+ i +"Image");
     var OptObs=ReadXMLNode(obj,"Opt"+ i +"Obs");
     if(OptObs==null)OptObs="";
-    sValorFrete=ReadXMLNode(obj,"Opt"+ i +"Value");
+    var sValorFrete=ReadXMLNode(obj,"Opt"+ i +"Value");
     if(sValorFrete==FC$.Currency+" 0,00")sValorFrete="FRETE GRÁTIS";
     sShipping+="<div class='ZipOption'>";
     sShipping+="  <div class='ZipNameObs'>";
@@ -835,8 +815,8 @@ function processXMLCEPGrid(obj,IDProd){
   sShipping+="</div>";
   document.getElementById("ImgLoadingCEP").style.display='none';
 }
-// ZipCode Grid FC - CEP - End
 
+// ZipCode Grid FC - CEP - End
 function fnGetCookie(name){
   var arg=name+"=";
   var alen=arg.length;
@@ -858,8 +838,8 @@ function fnGetCookieVal(offset){
 }
 
 function fnSetCookie(name,value){
-  var argv=fnSetCookie.arguments;
-  var argc=fnSetCookie.arguments.length;
+  var argv=arguments;
+  var argc=arguments.length;
   var expires=(argc>2)?argv[2]:null;
   var path=(argc>3)?argv[3]:null;
   var domain=(argc>4)?argv[4]:null;
@@ -869,6 +849,7 @@ function fnSetCookie(name,value){
 
 FCLib$.onReady(FCLib$.showPwdViewer);
 function FuncChkRegisterBegin(){FCLib$.showPwdViewer();}
+
 
 // Global Signin
 if(FC$.ClientID==0)FCLib$.onReady(fnShowGlobalSignin);
@@ -975,9 +956,114 @@ function fnDontGoActions() {
 
 document.addEventListener('DOMContentLoaded', fnDontGoActions, false);
 
+
 function fnProgressBarLoading(){
   NProgress.start();
   window.addEventListener("load",function(event){
     NProgress.done();
   });
+}
+
+
+// Product Stock
+function fnGetStockProduct(sStockProduct){
+var productStock=document.getElementById("product-details-show-stock");
+if(sStockProduct==0){productStock.innerHTML=""}
+else if(sStockProduct<=6){
+productStock.innerHTML="<span>Apenas <span class='product-details-show-stock-lastoff'>"+ sStockProduct +"</span> em estoque!</span><br><div class='product-details-progress-bar product-details-color1 product-details-stripes'><span class='product-details-stripes-size'></span></div>"
+}
+else if(sStockProduct<=10){
+productStock.innerHTML="<span>Apenas <span class='product-details-show-stock-lastoff'>"+ sStockProduct +"</span> em estoque!</span><br><div class='product-details-progress-bar2 product-details-color2 product-details-stripes2'><span class='product-details-stripes-size2'></span></div>"
+}
+else if(sStockProduct>=11){productStock.innerHTML=""}
+else{productStock.innerHTML=""}
+}
+// Show Date Prom
+function fnGetDate(sDateTime,IsMMDD){
+var IsDate=false;
+var oDate=null;
+var aDateTime=sDateTime.split(' ');
+if(aDateTime.length<=2){
+var oMatchesDate=/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})$/.exec(aDateTime[0]);
+if(oMatchesDate!=null){
+if(IsMMDD){
+var m=parseInt(oMatchesDate[1]-1,10);
+var d=parseInt(oMatchesDate[2],10);
+}
+else{
+var d=parseInt(oMatchesDate[1],10);
+var m=parseInt(oMatchesDate[2]-1,10);
+}
+var y=parseInt(oMatchesDate[3],10);
+if(y<30)y+=2000;
+else if(y<100)y+=1900;
+if(aDateTime.length==2){
+var oMatchesTime=/^(\d{1,2})[:](\d{1,2})$/.exec(aDateTime[1]);
+if(oMatchesTime!=null){
+var hh=parseInt(oMatchesTime[1],10);
+var mm=parseInt(oMatchesTime[2],10);
+var oNewDate=new Date(y,m,d,hh,mm);
+IsDate=(oNewDate.getMinutes()==mm && oNewDate.getHours()==hh && oNewDate.getDate()==d && oNewDate.getMonth()==m && oNewDate.getFullYear()==y);
+}
+}
+else{
+var oNewDate=new Date(y,m,d,2);
+IsDate=(oNewDate.getDate()==d && oNewDate.getMonth()==m && oNewDate.getFullYear()==y);
+}
+if(IsDate)oDate=oNewDate;
+}
+}
+return {IsDate:IsDate, oDate:oDate};
+}
+function fnFormatN(n){
+n=""+n;
+if(n.length==1)n="0"+n;
+return n;
+}
+function fnShowDateProm(sDateTime){
+var oOut=document.getElementById("DataProm");
+if(oOut){
+var IsMMDD=false;
+var oGetDate=fnGetDate(sDateTime,IsMMDD);
+if(oGetDate.IsDate){
+setInterval(function() {
+var dDataPromFim=oGetDate.oDate;
+var dAgora=new Date();
+var dFaltam=(dDataPromFim-dAgora); //retorna em milissegundos
+var iHoras=new Date(dFaltam+10800000).getHours(); //horas > diferença de 3 horas (+10800000)
+var iMinutos=new Date(dFaltam+10800000).getMinutes(); //minutos > diferença de 3 horas (+10800000)
+var iSeconds=new Date(dFaltam+10800000).getSeconds(); //segundos > diferença de 3 horas (+10800000)
+dFaltam=parseInt(dFaltam/1000/60/60/24); //quantos dias restam para acabar a promoção
+if(dDataPromFim>dAgora && dFaltam<10){ //só exibe informação quando faltarem 10 dias para acabar a promoção
+var sCont="<div class='product-details-data-prom-date-container'>Promoção válida até <b class='product-details-data-prom-date'>"+ fnFormatN(dDataPromFim.getDate()) +"/"+ fnFormatN(1+dDataPromFim.getMonth()) +"/"+ dDataPromFim.getFullYear() +" às "+ fnFormatN(dDataPromFim.getHours()) +":"+ fnFormatN(dDataPromFim.getMinutes()) +".</b></div><div class='product-details-lats-hours'>Faltam</div>";
+if(dFaltam<1){
+sCont+="<div class='product-details-data-prom-container'>";
+if(iHoras>=2){
+sCont+="<div class='product-details-data-prom-time'><div class='product-details-data-prom-time-title'>"+ iHoras +"</div><div class='product-details-data-prom-time-txt'>hora"+ (iHoras>=1?"s</div></div>":"");
+}else if(iHoras==1){
+sCont+="<div class='product-details-data-prom-time'><div class='product-details-data-prom-time-title'>"+ iHoras +"</div><div class='product-details-data-prom-time-txt'>hora"+ (iHoras>=1?"</div></div>":"");
+}
+if(iMinutos>0)sCont+="<div class='product-details-data-prom-time'><div class='product-details-data-prom-time-title'>"+iMinutos+"</div><div class='product-details-data-prom-time-txt'>min"+(iMinutos>=1?"</div></div>":"");
+if(iSeconds>0)sCont+="<div class='product-details-data-prom-time'><div class='product-details-data-prom-time-title'>"+iSeconds+"</div><div class='product-details-data-prom-time-txt'>seg"+(iSeconds>=1?"</div></div>":"");
+sCont+="</div>";}
+else if(dFaltam==1){
+sCont+="<div class='product-details-data-prom-container'><div class='product-details-data-prom-time'><div class='product-details-data-prom-time-title'>"+ dFaltam +"</div><div class='product-details-data-prom-time-txt'>dia</div></div>";
+if(iHoras>=2){
+sCont+="<div class='product-details-data-prom-time'><div class='product-details-data-prom-time-title'>"+ iHoras +"</div><div class='product-details-data-prom-time-txt'>hora"+ (iHoras>=1?"s</div></div>":"");
+}else if(iHoras==1){
+sCont+="<div class='product-details-data-prom-time'><div class='product-details-data-prom-time-title'>"+ iHoras +"</div><div class='product-details-data-prom-time-txt'>hora"+ (iHoras>=1?"</div></div>":"");
+}
+if(iMinutos>0)sCont+="<div class='product-details-data-prom-time'><div class='product-details-data-prom-time-title'>"+iMinutos+"</div><div class='product-details-data-prom-time-txt'>min"+(iMinutos>=1?"</div></div>":"");
+if(iSeconds>0)sCont+="<div class='product-details-data-prom-time'><div class='product-details-data-prom-time-title'>"+iSeconds+"</div><div class='product-details-data-prom-time-txt'>seg"+(iSeconds>=1?"</div></div>":"");
+sCont+="</div>";
+}
+else if(dFaltam>1){sCont+="<div class='product-details-data-prom-time'><div class='product-details-data-prom-time-title'>"+ dFaltam +"</div><div class='product-details-data-prom-time-txt'>dias</div></div>";}
+oOut.innerHTML=sCont;
+//oOut.style.background="#f3f3f3";
+//oOut.style.padding="10px";
+//oOut.style.borderRadius="10px";
+}
+},1000);
+}
+}
 }
