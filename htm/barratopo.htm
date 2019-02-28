@@ -1,167 +1,87 @@
-<!-- Includes CSS -->
-<link rel="stylesheet" href="/wave/v3/wavemin.css?cccfc=1">
-<script>FCLib$.loadAsyncCSS('<PathTo file="htm/css/jquery_ui.css">');</script>
 <!--[if IE]><style type="text/css">.ui-autocomplete-category{margin-top: -2px}</style><![endif]-->
-<!-- Includes Javascript -->
-<script src='<PathTo file="htm/jurosparcelas.js">'></script>
-<script src='<PathTo file="htm/lojalib.js">'></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
-<script src='<PathTo file="htm/js/autosuggesttbar.js">'></script>
-<script src='<PathTo file="htm/js/autosuggest.js">'></script>
-<script src='<PathTo file="htm/js/scrolltothetop.js">'></script>
-<script src='<PathTo file="htm/js/tinynav.js">'></script>
-<script>iItensCesta=<QtdCesta>;</script>
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+<script>
+var iItensCesta=<QtdCesta>;
+var iQtdProds=0;
+ImgLoadingFC=FC$.PathImg+"loading.gif?cccfc=1";
+ImgOnError=FC$.PathImg+"nd";
+FCLib$.LazyLoadWaitImage=FC$.PathImg+"loading-lazy-load.gif?cccfc=1"; //loading usado no lazy load
+</script>
 
-<!-- Begin: Toolbar -->
-<div class="FCToolBar">
-  <div class="FCToolBarContainer">
-    <tag-FCHeaderToolBarLogo>
-    <tag-FCHeaderToolBarCategories>
-    <tag-FCHeaderToolBarSearch>
-    <span class="FCToolBarChatTel">
-      <a href="#" style="float:left;" class=""><img64 src="<BaseLoja>images/iconcomphone.svg" plain="true" width="20" height="20"></a>
-      <p><tag-FCHeaderToolBarPhone></p>
-    </span>
-    <tag-FCHeaderToolBarCart>
-  </div>
+<div id="offcanvas-overlay" onclick="headerCloseNav();"></div>
+<div id="headerSidenav" class="header-sidenav">
+  <a href="javascript:void(0)" class="closebtn" onclick="headerCloseNav()"><img alt="Fechar" title="Fechar" src="<PathTo file="images/icon-menu-close.svg">" width="35" height="35"></a>
+  <a href="/" class="header-sidenav-link"><span class="header-sidenav-link-position">Home</span></a>
+  <a href="<url-sale>" class="header-sidenav-link"><span class="header-sidenav-link-position">Promoções</span></a>
+  <a href="<url-release>" class="header-sidenav-link"><span class="header-sidenav-link-position">Lançamentos</span></a>
+  <a href="<url-account>?orders=1#Orders" class="header-sidenav-link"><span class="header-sidenav-link-position">Meus Pedidos</span></a>
+  <a href="/lista-de-compra" rel="nofollow" class="header-sidenav-link header-sidenav-link-shopping-list"><span class="header-sidenav-link-position header-menu-shopping-list"><img64 src="<BaseLoja>images/product-list.svg" width="22" height="22" plain="true"><span>Lista de Compra</span></span></a>
+  <a href="<url-account>?wishlist=1#Wishlist" rel="nofollow" class="header-sidenav-link"><span class="header-sidenav-link-position header-menu-wishlist"><img64 src="<BaseLoja>images/product-wishlist.svg" width="22" height="22" plain="true"><span>Lista de Desejos</span></span></a>
+  <a href="<url-account>?register=1#Register" class="header-sidenav-link"><span class="header-sidenav-link-position">Cadastro</span></a>
+  <a href="<url-newsletter>" class="header-sidenav-link"><span class="header-sidenav-link-position">Newsletter</span></a>
+  <a href="<url-contact>" class="header-sidenav-link"><span class="header-sidenav-link-position">Contato</span></a>
+  <a href="<url-categories>" class="header-sidenav-link"><span class="header-sidenav-link-position"><categorias></span></a>
+  <ListPathCat out="10" id="-5">
 </div>
-<script>var w=jQuery(window).width();w>1024&&ToolbarCartExec();</script>
-<!-- End: Toolbar -->
 
-<!-- Begin: Logo|Menu|Search|Cart -->
-<div class="MainContainer">
-  <div class="row FullSpaceFC">
-    <div class="col-small-12 col-medium-3 col-large-3 col-xlarge-3 text-medium-left text-large-left text-xlarge-left">
-      <tag-FCHeaderLogo>
-    </div>
-    <div class="col-small-12 col-medium-6 col-large-6 col-xlarge-6">
-      <div class="HeaderMenuOneFC hide-small">
-        <ul>
-          <li class="header-menu-display"><tag-FCHeaderMenuAccount></li>
-          <li><tag-FCHeaderMenuTrack></li>
-          <li class="header-menu-display"><tag-FCHeaderMenuContact></li>
-          <li class="header-menu-shopping-list"><a href="/lista-de-compra" rel="nofollow"><img64 src="<BaseLoja>images/product-list.svg" width="22" height="22" plain="true">Lista de compra</a></li>
-          <li class="header-menu-wishlist"><a href="/account.asp?idloja=<IDLoja>&wishlist=1#Wishlist" rel="nofollow"><img64 src="<BaseLoja>images/product-wishlist.svg" width="22" height="22" plain="true">Lista de desejos</a></li>
-        </ul>
-      </div>
-      <tag-FCHeaderSearch>
-      <div class="MainConatiner HeaderSocialLogin-position hide-small">
-        <div class="col-small-12 col-medium-9 col-large-12 col-xlarge-12">
-         <tag-FCHeaderSocialLogin>
+<div class="row HeaderMainbar">
+  <div class="MainContainer">
+    <div class="col-small-12 col-medium-12 col-large-12 col-xlarge-12">
+      <div class="header-mainbar-flex">
+        <div class="header-mainbar-flex-mobile-menu" onclick="headerOpenNav()"><img alt="Menu" title="Menu" src="<PathTo file="images/icon-menu.svg">" width="35" height="35"></div>
+        <div class="header-mainbar-flex-logo"><a href="<StoreDomain>"><img alt="<NomeLoja>" title="<NomeLoja>" src="<PathTo file="images/logotopo.png">" class="HeaderLogo"></a></div>
+        <div class="child-header-mainbar header-mainbar-flex-menu hide-small hide-medium hide-large show-xlarge">
+          <ul class="SmallMenuList HeaderMenuULFC">
+            <a href="<url-sale>"><li class="HeaderMenuSaleMobileFC font-bold">Promoções</li></a>
+            <a href="<url-release>"><li class="HeaderMenuReleaseMobileFC font-bold">Lançamentaaaaaaaaaaaaaos</li></a>
+          </ul>
+        </div>
+        <div class="child-header-mainbar header-mainbar-flex-search speech" id="search-box">
+          <form name="TopSearchForm" method="GET" id="autocomplete-form" action="<url-prod>">
+            <input type="hidden" name="<par-typed>" value="true">
+            <input type="text" id="autocomplete" value="<SearchText>" name="<par-text>" class="InputTextBusca" placeholder="Digite sua busca aqui">
+            <img class="header-speech-icon" id="voiceSearch" onclick="sF$.fnStartDictation()" src="<BaseLoja>images/icon-speech.svg?cccfc=1" width="24" height="24" alt="Fale" />
+            <button id="search-button" type="submit" aria-label="Buscar">                     
+              <img src="<BaseLoja>images/iconsearch.svg?cccfc=1" width="22" height="22" alt="Buscar" id="voiceSearchMGlass">
+            </button>
+          </form>
+        </div>
+        <div class="header-mainbar-flex-cart">
+          <div class="HeaderBasket">
+            <a style="cursor:pointer;" onclick="Cart$.fnShowCartCheckout();">
+              <img64 src="<BaseLoja>images/iconcart.svg" plain="true">
+              <div class="HeaderCartItensPosition hide-small hide-medium show-large show-xlarge"><span id="idCartItemsTop" class="HeaderCartNumberProds"></span></div>
+            </a>
+          </div>
         </div>
       </div>
     </div>
-    <!-- Begin Cart -->
-    <div class="col-small-12 col-medium-3 col-large-3 col-xlarge-3 hide-small">
-      <div class="HeaderCartMainFC">
-        <tag-FCHeaderCart>
-      </div>
-    </div>
-    <!-- End Cart -->
-  </div> 
+  </div>
 </div>
-<!-- End: Logo|Menu|Search|Cart -->
 
-<!-- Begin Social Login User -->
-<div class="MainContainer HeaderSocialLoginPosition">
+<div class="header-space-top"></div>
+
+<div class="header-login-row hide-small">
   <div class="row">
-    <div class="col-medium-3 col-large-3 col-xlarge-3"></div>
-    <div class="col-small-12 col-medium-8 col-large-6 col-xlarge-6">
-    
-    </div>
-    <div class="col-medium-1 col-large-3 col-xlarge-3"></div>
-  </div>
-</div>
-<!-- End Social Login User -->
-
-<!-- Begin Main Menu -->
-<div class="HeaderMainMenuFC">
-  <div class="MainContainer">
-    <div class="row collapse">
-      <div class="col-small-12 col-medium-12 col-large-12 col-xlarge-12">
-        <nav class="SmallMenuContainer">
-          <div class="SmallMenuButtom">
-            <tag-FCHeaderMenuMobileIcon>
-          </div>
-          <ul class="SmallMenuList HeaderMenuULFC">
-            <tag-FCHeaderMenuMobile1>
-            <tag-FCHeaderMenuMobile2>
-            <tag-FCHeaderMenuMobile3>
-            <tag-FCHeaderMenuMobile4>
-            <tag-FCHeaderMenuMobile5>
-            <tag-FCHeaderMenuMobile6>
-          </ul>
-        </nav>
-        <!-- ul class="HeaderMenuULFC smallMenuHide">  
-          <tag-FCHeaderMenu1>
-          <tag-FCHeaderMenu2>
-          <tag-FCHeaderMenu3>
-          <tag-FCHeaderMenu4>
-          <tag-FCHeaderMenu5>
-          <tag-FCHeaderMenu6>
-        </ul -->
-            
-        <nav class="HeaderMenuULFC nav_categorias smallMenuHide">
-			<ul class="lista_categorias">
-	<li class="lista_categorias_item HeaderMenuHomeMobileFC"><a href="/prod,idloja,28697,avancada,1,adicional1,124472,sem-gluten">
-		<div class="cat-img">
-			<img src="<PathTo file="images/folha.png">" alt="Sem Glúten">
-		</div>
-		<p style="color:#6d3f30;"> Sem Glúten</p>
-	</a></li>
-	<li class="lista_categorias_item"><a href="/prod,idloja,28697,avancada,1,adicional1,124473,sem-lactose">
-		<div class="cat-img">
-			<img src="<PathTo file="images/folha.png">" alt="Sem Lactose">
-		</div>
-		<p style="color:#6d3f30;"> Sem Lactose</p>
-	</a></li>
-	<li class="lista_categorias_item"><a href="/prod,idloja,28697,avancada,1,adicional1,124474,sem-acucar">
-		<div class="cat-img">
-			<img src="<PathTo file="images/folha.png">" alt="Sem Açúcar">
-		</div>
-		<p style="color:#6d3f30;"> Sem Açúcar</p>
-	</a></li>
-	<li class="lista_categorias_item"><a href="/prod,idloja,28697,avancada,1,adicional1,124607,organicos">
-		<div class="cat-img">
-			<img src="<PathTo file="images/folha.png">" alt="Orgânicos">
-		</div>
-		<p style="color:#6d3f30;"> Orgânicos</p>
-	</a></li>
-	<li class="lista_categorias_item"><a href="#">
-		<div class="cat-img">
-			<img src="<PathTo file="images/folha.png">" alt="Congelados">
-		</div>
-		<p style="color:#6d3f30;"> Congelados</p>
-	</a></li>
-	<li class="lista_categorias_item"><a href="#">
-		<div class="cat-img">
-			<img src="<PathTo file="images/folha.png">" alt="Veganos">
-		</div>
-		<p style="color:#6d3f30;"> Veganos</p>
-	</a></li>
-	<li class="lista_categorias_item"><a href="/prod,IDLoja,28697,IDCategoria,240199,suplementos-alimentares">
-		<div class="cat-img">
-			<img src="<PathTo file="images/folha.png">" alt="Suplementos">
-		</div>
-		<p style="color:#6d3f30;"> Suplementos</p>
-	</a></li>
-	</ul>
-</nav>
-            
-            
+    <div class="MainContainer">
+      <div class="col-small-12 col-medium-7 col-large-7 col-xlarge-7 text-left">
+        <ul class="HeaderContainerSocialLoginUL">
+          <li class="HeaderContainerSocialLoginIconUser"><img id="UserImage" src="<PathTo file="images/iconuser.svg">" width="20" height="20" alt="Login usuário">&nbsp;</li>
+          <li class="HeaderContainerSocialLoginPosition" id="Header_SocialLogin_NamePosition"><span class="loginInfo"></span></li>
+        </ul>
+      </div>
+      <div class="col-small-12 col-medium-5 col-large-5 col-xlarge-5 text-right">
+        <div class="header-free-order"><b>FRETE GRÁTIS</b> acima de R$ 199,99. <a href="#">VER REGRAS</a></div>
       </div>
     </div>
   </div>
 </div>
-<!-- End Main Menu -->
 
 <!-- Receive Banner Home -->
 <div id="FC-ShowHomeBanners"></div>
 <!-- End Banner Home -->
 
 <div class="FullSpaceFC"></div>
-
-<script>MobileMenuClick();</script>
 
 <!-- Begin Aside BarraEsquerda.htm - Close Rodape.htm - Don't remove -->
 <div class="MainContainer">
